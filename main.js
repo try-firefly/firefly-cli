@@ -93,11 +93,18 @@ async function instrumentFunctions(functionsToInstrument) {
       continue;
     }
 
-    const layerArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`
-    const command = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${layerArn}`;
+    const otelArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`
+    const otelConfigArn = "arn:aws:lambda:eu-central-1:944018892116:layer:otel-collector-config:1"
+    const envVariables = "Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=/opt/collector.yaml}"
+
+    const addOtelLayerCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn}`;
+    const setTraceModeToActiveCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --tracing-config Mode=Active`;
+    const addEnvVariablesCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --environment "${envVariables}"`
 
     try {
-      await exec(command);
+      await exec(addOtelLayerCmd);
+      await exec(setTraceModeToActiveCmd);
+      await exec(addEnvVariablesCmd);
     } catch (e) {
       console.log(e);
     }
@@ -115,3 +122,12 @@ main();
 // work out which chipset is being used and use the correct layer for it
 // enable active tracing when updating the function
 // add the environment variables based on the language
+
+// aws lambda update-function-configuration \
+//     --function-name <name> \
+//     --tracing-config Mode=Active
+
+// because the layer is custom we may have to first create the collector.yaml with the right address
+// then publish that layer as a zip file in the persons account, get the arn back and use the arn within
+// the remainder of the setup
+
