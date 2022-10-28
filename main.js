@@ -19,7 +19,7 @@ const suppportRegions = [
   "us-east-2",
   "us-west-1",
   "us-west-2",
-]
+];
 
 async function getFunctionList() {
   let list;
@@ -59,12 +59,29 @@ async function getFunctionsToInstrument(functionList) {
   const question = {
     type: 'checkbox',
     name: 'functions',
-    message: 'Which functions would you like to instrument?',
+    message: 'Select the functions you would like to instrument',
     choices: functionNames
   }
 
   const answers = await inquirer.prompt(question);
   return functionList.filter(f => answers.functions.includes(f.name));
+}
+
+async function getHttpsAddress() {
+  const question = {
+    type: 'input',
+    name: 'httpAddress',
+    message: 'Please provide an HTTPS address to send Telemetry data to (e.g. https://example.com):',
+    validate: httpAddressValid
+  }
+
+  const answer = await inquirer.prompt(question);
+  console.log(answer.httpAddress);
+}
+
+async function httpAddressValid(address) {
+  const pattern = new RegExp('^https://.*');
+  return pattern.test(address);
 }
 
 function getOtelCollector(runtime) {
@@ -112,10 +129,21 @@ async function instrumentFunctions(functionsToInstrument) {
 }
 
 async function main() {
+  const httpsAddress = await getHttpsAddress();
+  createLambdaLayer(httpsAddress)
   const functionList = await getFunctionList();
   const functionsToInstrument = await getFunctionsToInstrument(functionList);
   await instrumentFunctions(functionsToInstrument);
-  console.log("Functions instrumented");
+  console.log("Instrumentation complete");
 }
 
 main();
+
+
+/*
+
+next up
+- can we write to a yaml file
+- create a zip out of this file when done and then publish it as a lambda layer?
+
+*/

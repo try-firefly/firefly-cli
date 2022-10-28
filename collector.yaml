@@ -6,7 +6,7 @@ receivers:
 
 exporters:
   otlphttp:
-    endpoint: https://lambda.marcused.com
+    endpoint: https://example.com
 
 service:
   pipelines:
