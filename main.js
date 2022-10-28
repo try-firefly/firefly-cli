@@ -115,19 +115,7 @@ async function main() {
   const functionList = await getFunctionList();
   const functionsToInstrument = await getFunctionsToInstrument(functionList);
   await instrumentFunctions(functionsToInstrument);
+  console.log("Functions instrumented");
 }
 
 main();
-
-// work out which chipset is being used and use the correct layer for it
-// enable active tracing when updating the function
-// add the environment variables based on the language
-
-// aws lambda update-function-configuration \
-//     --function-name <name> \
-//     --tracing-config Mode=Active
-
-// because the layer is custom we may have to first create the collector.yaml with the right address
-// then publish that layer as a zip file in the persons account, get the arn back and use the arn within
-// the remainder of the setup
-
