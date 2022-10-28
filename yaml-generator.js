@@ -1,19 +1,24 @@
 const yaml = require('js-yaml');
 const fs = require('fs');
+const { promisify } = require('util');
+const exec = promisify(require('child_process').exec);
 
 function read(path) {
   let fileContents = fs.readFileSync(path, 'utf8');
   let data = yaml.load(fileContents);
-  console.dir(data, { depth: null });
   return data;
 }
 
-function write() {
-
+function write(data) {
+  const yamlStr = yaml.dump(data);
+  fs.writeFileSync('collector.yaml', yamlStr, 'utf8');
 }
 
-function main() {
-  const file = read('./collector.yaml');
+async function createYamlZip(httpsAddress) {
+  const data = read('./setup.yaml');
+  data.exporters.otlphttp.endpoint = httpsAddress;
+  write(data);
+  await exec("zip collector.zip collector.yaml");
 }
 
-main();
+exports.createYamlZip = createYamlZip;
