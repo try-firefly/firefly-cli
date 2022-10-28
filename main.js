@@ -71,13 +71,13 @@ async function getFunctionsToInstrument(functionList) {
 async function getHttpsAddress() {
   const question = {
     type: 'input',
-    name: 'httpAddress',
+    name: 'httpsAddress',
     message: 'Please provide an HTTPS address to send Telemetry data to (e.g. https://example.com):',
     validate: httpAddressValid
   }
 
   const answer = await inquirer.prompt(question);
-  console.log(answer.httpAddress);
+  return answer.httpsAddress;
 }
 
 async function httpAddressValid(address) {
@@ -131,20 +131,11 @@ async function instrumentFunctions(functionsToInstrument) {
 
 async function main() {
   const httpsAddress = await getHttpsAddress();
-  createYamlZip(httpsAddress);
-  const functionList = await getFunctionList();
-  const functionsToInstrument = await getFunctionsToInstrument(functionList);
-  await instrumentFunctions(functionsToInstrument);
-  console.log("Instrumentation complete");
+  await createYamlZip(httpsAddress);
+  // const functionList = await getFunctionList();
+  // const functionsToInstrument = await getFunctionsToInstrument(functionList);
+  // await instrumentFunctions(functionsToInstrument);
+  // console.log("Instrumentation complete");
 }
 
 main();
-
-
-/*
-
-next up
-- can we write to a yaml file
-- create a zip out of this file when done and then publish it as a lambda layer?
-
-*/

@@ -10,7 +10,8 @@ function read(path) {
 }
 
 function write(data) {
-  const yamlStr = yaml.dump(data);
+  const config = { 'flowLevel': 4, styles: { '!!null': 'empty' } }
+  const yamlStr = yaml.dump(data, config);
   fs.writeFileSync('collector.yaml', yamlStr, 'utf8');
 }
 
