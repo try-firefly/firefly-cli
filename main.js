@@ -26,6 +26,7 @@ async function getFunctionList() {
   let list;
 
   try {
+    logger('Retrieving lambda functions');
     list = await exec("aws lambda list-functions");
   } catch {
     console.log('Please make sure you have installed the AWS CLI');
@@ -52,6 +53,10 @@ function extractFunctionData(functions) {
 
 function getRegion(arn) {
   return arn.split(':')[3];
+}
+
+function logger(str) {
+  console.log('--> ', str);
 }
 
 async function getFunctionsToInstrument(functionList) {
@@ -97,23 +102,31 @@ function getOtelCollector(runtime) {
   }
 }
 
+async function publishLayer() {
+  const cmd = "aws lambda publish-layer-version --layer-name otel-collector-config-test --zip-file fileb://collector.zip"
+  logger('Publishing configuration layer');
+  const result = await exec(cmd);
+  const output = JSON.parse(result.stdout);
+  return output.LayerArn;
+}
+
 async function instrumentFunctions(functionsToInstrument) {
   for (const fObj of functionsToInstrument) {
     const otel = getOtelCollector(fObj.runtime);
 
     if (!otel) {
-      console.log(`${fObj.name} can't be instrumented, ${fObj.runtime} not supported`);
+      logger(`${fObj.name} can't be instrumented, ${fObj.runtime} runtime not supported`);
       continue;
     }
 
     if (!suppportRegions.includes(fObj.region)) {
-      console.log(`${fObj.name} can't be instrumented, ${fObj.region} not supported`);
+      logger(`${fObj.name} can't be instrumented, ${fObj.region} not supported`);
       continue;
     }
 
     const otelArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`
-    const otelConfigArn = "arn:aws:lambda:eu-central-1:944018892116:layer:otel-collector-config:1"
     const envVariables = "Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=/opt/collector.yaml}"
+    const otelConfigArn = await publishLayer();
 
     const addOtelLayerCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn}`;
     const setTraceModeToActiveCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --tracing-config Mode=Active`;
@@ -121,6 +134,7 @@ async function instrumentFunctions(functionsToInstrument) {
 
     try {
       await exec(addOtelLayerCmd);
+      logger('Adding OpenTelemetry collector');
       await exec(setTraceModeToActiveCmd);
       await exec(addEnvVariablesCmd);
     } catch (e) {
@@ -132,10 +146,10 @@ async function instrumentFunctions(functionsToInstrument) {
 async function main() {
   const httpsAddress = await getHttpsAddress();
   await createYamlZip(httpsAddress);
-  // const functionList = await getFunctionList();
-  // const functionsToInstrument = await getFunctionsToInstrument(functionList);
-  // await instrumentFunctions(functionsToInstrument);
-  // console.log("Instrumentation complete");
+  const functionList = await getFunctionList();
+  const functionsToInstrument = await getFunctionsToInstrument(functionList);
+  await instrumentFunctions(functionsToInstrument);
+  logger("Instrumentation complete");
 }
 
 main();
