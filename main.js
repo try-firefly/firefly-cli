@@ -83,7 +83,7 @@ async function getHttpsAddress() {
     type: 'input',
     name: 'httpsAddress',
     prefix: '',
-    message: 'Please provide an HTTPS address to send Telemetry data to (e.g. https://example.com):',
+    message: 'Please provide an HTTPS address to send Telemetry data to (https://example.com):',
     validate: httpAddressValid
   }
 
@@ -145,6 +145,7 @@ async function instrumentFunctions(functionsToInstrument) {
   const envVariables = "Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=/opt/collector.yaml}"
 
   for (const fObj of functionsToInstrument) {
+    console.log("---------------------------------------------------");
     const otel = getOtelCollector(fObj.runtime);
 
     if (!otel) {
@@ -169,8 +170,6 @@ async function instrumentFunctions(functionsToInstrument) {
     } catch (e) {
       console.log(e);
     }
-    
-    console.log("--------------------------------------");
   }
 }
 
@@ -180,7 +179,7 @@ async function main() {
   const functionList = await getFunctionList();
   const functionsToInstrument = await getFunctionsToInstrument(functionList);
   await instrumentFunctions(functionsToInstrument);
-  completionLogger("Instrumentation complete");
+  console.log("** Instrumentation complete **");
 }
 
 main();
