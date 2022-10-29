@@ -123,21 +123,21 @@ async function waitForAws(sec) {
 async function addCollector(addOtelLayerCmd, fObj) {
   logger('Adding OpenTelemetry collector');
   await exec(addOtelLayerCmd);
-  completionLogger(`Collector added to ${fObj.name}`);
+  completionLogger('Collector added');
   waitForAws(1);
 }
 
 async function activateTracing(setTraceModeToActiveCmd, fObj) {
   logger('Activating trace mode');
   await exec(setTraceModeToActiveCmd);
-  completionLogger(`Trace mode activated for ${fObj.name}`);
+  completionLogger('Trace mode activated');
   waitForAws(2);
 }
 
 async function addEnvironmentVariables(addEnvVariablesCmd, fObj) {
   logger('Adding environment variables');
   await exec(addEnvVariablesCmd);
-  completionLogger(`Environment variables added to ${fObj.name}`);
+  completionLogger('Environment variables added');
 }
 
 async function instrumentFunctions(functionsToInstrument) {
@@ -145,7 +145,8 @@ async function instrumentFunctions(functionsToInstrument) {
   const envVariables = "Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=/opt/collector.yaml}"
 
   for (const fObj of functionsToInstrument) {
-    console.log("---------------------------------------------------");
+    console.log('');
+    logger(`Instrumenting ${fObj.name}`);
     const otel = getOtelCollector(fObj.runtime);
 
     if (!otel) {
