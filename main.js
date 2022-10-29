@@ -56,7 +56,11 @@ function getRegion(arn) {
 }
 
 function logger(str) {
-  console.log('--> ', str);
+  console.log('> ', str);
+}
+
+function completionLogger(str) {
+  console.log('\u2714 ', str);
 }
 
 async function getFunctionsToInstrument(functionList) {
@@ -107,10 +111,13 @@ async function publishLayer() {
   logger('Publishing configuration layer');
   const result = await exec(cmd);
   const output = JSON.parse(result.stdout);
-  return output.LayerArn;
+  return output.LayerArn + `:${output.Version}`;
 }
 
 async function instrumentFunctions(functionsToInstrument) {
+  const otelConfigArn = await publishLayer();
+  const envVariables = "Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=/opt/collector.yaml}"
+
   for (const fObj of functionsToInstrument) {
     const otel = getOtelCollector(fObj.runtime);
 
@@ -125,18 +132,20 @@ async function instrumentFunctions(functionsToInstrument) {
     }
 
     const otelArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`
-    const envVariables = "Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=/opt/collector.yaml}"
-    const otelConfigArn = await publishLayer();
-
     const addOtelLayerCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn}`;
     const setTraceModeToActiveCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --tracing-config Mode=Active`;
     const addEnvVariablesCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --environment "${envVariables}"`
 
     try {
-      await exec(addOtelLayerCmd);
       logger('Adding OpenTelemetry collector');
+      await exec(addOtelLayerCmd);
+      completionLogger(`Collector added to ${fObj.name}`);
+      logger('Activating trace mode');
       await exec(setTraceModeToActiveCmd);
+      completionLogger('Trace mode activated');
+      logger('Adding environment variables');
       await exec(addEnvVariablesCmd);
+      completionLogger('Environment variables added');
     } catch (e) {
       console.log(e);
     }
