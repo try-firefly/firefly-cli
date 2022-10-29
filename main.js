@@ -69,6 +69,7 @@ async function getFunctionsToInstrument(functionList) {
   const question = {
     type: 'checkbox',
     name: 'functions',
+    prefix: '',
     message: 'Select the functions you would like to instrument',
     choices: functionNames
   }
@@ -81,6 +82,7 @@ async function getHttpsAddress() {
   const question = {
     type: 'input',
     name: 'httpsAddress',
+    prefix: '',
     message: 'Please provide an HTTPS address to send Telemetry data to (e.g. https://example.com):',
     validate: httpAddressValid
   }
@@ -114,6 +116,30 @@ async function publishLayer() {
   return output.LayerArn + `:${output.Version}`;
 }
 
+async function waitForAws(sec) {
+  await new Promise(resolve => setTimeout(resolve, sec * 1000));
+}
+
+async function addCollector(addOtelLayerCmd, fObj) {
+  logger('Adding OpenTelemetry collector');
+  await exec(addOtelLayerCmd);
+  completionLogger(`Collector added to ${fObj.name}`);
+  waitForAws(1);
+}
+
+async function activateTracing(setTraceModeToActiveCmd, fObj) {
+  logger('Activating trace mode');
+  await exec(setTraceModeToActiveCmd);
+  completionLogger(`Trace mode activated for ${fObj.name}`);
+  waitForAws(2);
+}
+
+async function addEnvironmentVariables(addEnvVariablesCmd, fObj) {
+  logger('Adding environment variables');
+  await exec(addEnvVariablesCmd);
+  completionLogger(`Environment variables added to ${fObj.name}`);
+}
+
 async function instrumentFunctions(functionsToInstrument) {
   const otelConfigArn = await publishLayer();
   const envVariables = "Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=/opt/collector.yaml}"
@@ -137,18 +163,14 @@ async function instrumentFunctions(functionsToInstrument) {
     const addEnvVariablesCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --environment "${envVariables}"`
 
     try {
-      logger('Adding OpenTelemetry collector');
-      await exec(addOtelLayerCmd);
-      completionLogger(`Collector added to ${fObj.name}`);
-      logger('Activating trace mode');
-      await exec(setTraceModeToActiveCmd);
-      completionLogger('Trace mode activated');
-      logger('Adding environment variables');
-      await exec(addEnvVariablesCmd);
-      completionLogger('Environment variables added');
+      await addCollector(addOtelLayerCmd, fObj);
+      await activateTracing(setTraceModeToActiveCmd, fObj);
+      await addEnvironmentVariables(addEnvVariablesCmd, fObj);
     } catch (e) {
       console.log(e);
     }
+    
+    console.log("--------------------------------------");
   }
 }
 
@@ -158,7 +180,7 @@ async function main() {
   const functionList = await getFunctionList();
   const functionsToInstrument = await getFunctionsToInstrument(functionList);
   await instrumentFunctions(functionsToInstrument);
-  logger("Instrumentation complete");
+  completionLogger("Instrumentation complete");
 }
 
 main();
