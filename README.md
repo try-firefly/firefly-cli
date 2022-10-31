@@ -16,6 +16,8 @@
 * You will then be asked to select the functions you wish to instrument
 * The HTTPS address you entered will be used as the traces endpoint for the selected functions
 * If you wish, you can set different endpoints for functions in different regions. Simply run the cli again using a different endpoint for those functions
+* If you function does not have the required permissions to set turn on active tracing then you need to navigate to configuration > monitoring and operation tools
+click `edit` and then `save`. AWS will add the required permissions...
 
 3. `cd` into the terraform directory in order to setup the metric-stream and firehose
 4. Run the following commands replacing `<access-key>` and `<secret-key>` with your keys:

@@ -111,6 +111,7 @@ async function publishLayer() {
   const cmd = "aws lambda publish-layer-version --layer-name otel-collector-config --zip-file fileb://collector.zip"
   logger('Publishing configuration layer');
   const result = await exec(cmd);
+  completionLogger('Configuration layer published');
   const output = JSON.parse(result.stdout);
   return output.LayerArn + `:${output.Version}`;
 }
