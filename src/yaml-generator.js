@@ -16,7 +16,7 @@ function write(data) {
 }
 
 async function createYamlZip(httpsAddress) {
-  const data = read('./setup.yaml');
+  const data = read('../config/setup.yaml');
   data.exporters.otlphttp.endpoint = httpsAddress;
   write(data);
   await exec("zip collector.zip collector.yaml");
