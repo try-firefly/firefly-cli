@@ -108,7 +108,7 @@ function getOtelCollector(runtime) {
 }
 
 async function publishLayer() {
-  const cmd = "aws lambda publish-layer-version --layer-name otel-collector-config-test --zip-file fileb://collector.zip"
+  const cmd = "aws lambda publish-layer-version --layer-name otel-collector-config --zip-file fileb://collector.zip"
   logger('Publishing configuration layer');
   const result = await exec(cmd);
   const output = JSON.parse(result.stdout);
@@ -116,21 +116,21 @@ async function publishLayer() {
 }
 
 async function waitForAws(sec) {
-  await new Promise(resolve => setTimeout(resolve, sec * 1000));
+  return new Promise(resolve => setTimeout(resolve, sec * 1000));
 }
 
 async function addCollector(addOtelLayerCmd) {
   logger('Adding OpenTelemetry collector');
   await exec(addOtelLayerCmd);
   completionLogger('Collector added');
-  waitForAws(1);
+  await waitForAws(1);
 }
 
 async function activateTracing(setTraceModeToActiveCmd) {
   logger('Activating trace mode');
   await exec(setTraceModeToActiveCmd);
   completionLogger('Trace mode activated');
-  waitForAws(2);
+  await waitForAws(3);
 }
 
 async function addEnvironmentVariables(addEnvVariablesCmd) {
