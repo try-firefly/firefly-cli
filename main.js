@@ -120,21 +120,21 @@ async function waitForAws(sec) {
   await new Promise(resolve => setTimeout(resolve, sec * 1000));
 }
 
-async function addCollector(addOtelLayerCmd, fObj) {
+async function addCollector(addOtelLayerCmd) {
   logger('Adding OpenTelemetry collector');
   await exec(addOtelLayerCmd);
   completionLogger('Collector added');
   waitForAws(1);
 }
 
-async function activateTracing(setTraceModeToActiveCmd, fObj) {
+async function activateTracing(setTraceModeToActiveCmd) {
   logger('Activating trace mode');
   await exec(setTraceModeToActiveCmd);
   completionLogger('Trace mode activated');
   waitForAws(2);
 }
 
-async function addEnvironmentVariables(addEnvVariablesCmd, fObj) {
+async function addEnvironmentVariables(addEnvVariablesCmd) {
   logger('Adding environment variables');
   await exec(addEnvVariablesCmd);
   completionLogger('Environment variables added');
