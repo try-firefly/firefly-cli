@@ -172,6 +172,8 @@ async function instrumentFunctions(functionsToInstrument) {
       console.log(e);
     }
   }
+
+  completionLogger("Instrumentation complete");
 }
 
 async function main() {
@@ -180,7 +182,6 @@ async function main() {
   const functionList = await getFunctionList();
   const functionsToInstrument = await getFunctionsToInstrument(functionList);
   await instrumentFunctions(functionsToInstrument);
-  console.log("** Instrumentation complete **");
 }
 
 main();
