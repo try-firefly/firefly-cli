@@ -28,8 +28,9 @@ async function getFunctionList() {
   try {
     logger('Retrieving lambda functions');
     list = await exec("aws lambda list-functions");
-  } catch {
+  } catch (e) {
     console.log('Please make sure you have installed the AWS CLI');
+    console.log(`Error: ${e}`);
   }
 
   list = JSON.parse(list.stdout);
