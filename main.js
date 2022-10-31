@@ -97,9 +97,7 @@ async function httpAddressValid(address) {
 }
 
 function getOtelCollector(runtime) {
-  if (runtime.match(/.*java.*/gi)) {
-    return "aws-otel-java-wrapper-amd64-ver-1-18-0:1";
-  } else if (runtime.match(/.*node.*/gi)) {
+  if (runtime.match(/.*node.*/gi)) {
     return "aws-otel-nodejs-amd64-ver-1-7-0:1";
   } else if (runtime.match(/.*python.*/gi)) {
     return "aws-otel-python-amd64-ver-1-13-0:1"
@@ -142,7 +140,6 @@ async function addEnvironmentVariables(addEnvVariablesCmd) {
 
 async function instrumentFunctions(functionsToInstrument) {
   const otelConfigArn = await publishLayer();
-  const envVariables = "Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=/opt/collector.yaml}"
 
   for (const fObj of functionsToInstrument) {
     console.log('');
@@ -159,10 +156,12 @@ async function instrumentFunctions(functionsToInstrument) {
       continue;
     }
 
-    const otelArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`
+    const configPath = fObj.runtime.match(/.*node.*/gi) ? "/opt/collector.yaml" : "/opt/otel-instrument";
+    const otelArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`;
+    const envVariables = `Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=${configPath}}`;
     const addOtelLayerCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn}`;
     const setTraceModeToActiveCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --tracing-config Mode=Active`;
-    const addEnvVariablesCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --environment "${envVariables}"`
+    const addEnvVariablesCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --environment "${envVariables}"`;
 
     try {
       await addCollector(addOtelLayerCmd, fObj);
