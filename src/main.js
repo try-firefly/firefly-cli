@@ -177,10 +177,10 @@ async function instrumentFunctions(functionsToInstrument) {
 async function main() {
   const httpsAddress = await getHttpsAddress();
   await createYamlZip(httpsAddress);
-  // const functionList = await getFunctionList();
-  // const functionsToInstrument = await getFunctionsToInstrument(functionList);
-  // await instrumentFunctions(functionsToInstrument);
-  // console.log("** Instrumentation complete **");
+  const functionList = await getFunctionList();
+  const functionsToInstrument = await getFunctionsToInstrument(functionList);
+  await instrumentFunctions(functionsToInstrument);
+  console.log("** Instrumentation complete **");
 }
 
 main();
