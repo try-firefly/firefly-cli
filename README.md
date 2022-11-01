@@ -1,7 +1,7 @@
 ## Prerequisites
 
 1. AWS account
-2. (AWS CLI)[https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html]
+2. [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 3. [AWS Access Key/Secret](https://docs.aws.amazon.com/powershell/latest/userguide/pstools-appendix-sign-up.html)
 4. [terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
 5. HTTPS address in which you can send telemetry data to
