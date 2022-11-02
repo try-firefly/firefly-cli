@@ -46,10 +46,15 @@ function extractFunctionData(functions) {
     fObj.name = f.FunctionName;
     fObj.region = getRegion(f.FunctionArn);
     fObj.runtime = f.Runtime;
+    fObj.role = getRole(f.Role);
     functionData.push(fObj);
   }
 
   return functionData;
+}
+
+function getRole(arn) {
+  return arn.split('/')[2];
 }
 
 function getRegion(arn) {
@@ -124,6 +129,12 @@ async function addCollector(addOtelLayerCmd) {
   logger('Adding OpenTelemetry collector');
   await exec(addOtelLayerCmd);
   completionLogger('Collector added');
+  await waitForAws(2);
+}
+
+async function addTracingPolicy(addTracePolicyCmd) {
+  logger('Adding tracing policy');
+  await exec(addTracePolicyCmd);
   await waitForAws(1);
 }
 
@@ -162,13 +173,15 @@ async function instrumentFunctions(functionsToInstrument) {
     const otelArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`;
     const envVariables = `Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=${configPath}}`;
     const addOtelLayerCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn}`;
+    const addTracePolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"`
     const setTraceModeToActiveCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --tracing-config Mode=Active`;
     const addEnvVariablesCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --environment "${envVariables}"`;
 
     try {
-      await addCollector(addOtelLayerCmd, fObj);
-      await activateTracing(setTraceModeToActiveCmd, fObj);
-      await addEnvironmentVariables(addEnvVariablesCmd, fObj);
+      await addCollector(addOtelLayerCmd);
+      await addTracingPolicy(addTracePolicyCmd);
+      await activateTracing(setTraceModeToActiveCmd);
+      await addEnvironmentVariables(addEnvVariablesCmd);
     } catch (e) {
       console.log(e);
     }
@@ -186,3 +199,7 @@ async function main() {
 }
 
 main();
+
+// firefly-test-3-role-ijyk708n
+
+// aws iam attach-role-policy --role-name firefly-test-3-role-ijyk708n --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"
