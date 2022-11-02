@@ -135,14 +135,22 @@ async function addCollector(addOtelLayerCmd) {
 async function addTracingPolicy(addTracePolicyCmd) {
   logger('Adding tracing policy');
   await exec(addTracePolicyCmd);
-  await waitForAws(1);
+  completionLogger('Tracing policy added');
+  await waitForAws(2);
 }
 
 async function activateTracing(setTraceModeToActiveCmd) {
   logger('Activating trace mode');
   await exec(setTraceModeToActiveCmd);
   completionLogger('Trace mode activated');
-  await waitForAws(3);
+  await waitForAws(2);
+}
+
+async function addEnhancedMonitoringPolicy(addEnhancedMonitoringPolicyCmd) {
+  logger('Adding enhanced monitoring policy');
+  await exec(addEnhancedMonitoringPolicyCmd);
+  completionLogger('Enhanced monitoring policy added');
+  await waitForAws(2);
 }
 
 async function addEnvironmentVariables(addEnvVariablesCmd) {
@@ -171,16 +179,19 @@ async function instrumentFunctions(functionsToInstrument) {
 
     const configPath = fObj.runtime.match(/.*node.*/gi) ? "/opt/collector.yaml" : "/opt/otel-instrument";
     const otelArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`;
+    const lambdaInsightsArn = "arn:aws:lambda:eu-central-1:580247275435:layer:LambdaInsightsExtension:21";
     const envVariables = `Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=${configPath}}`;
-    const addOtelLayerCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn}`;
+    const addOtelLayerCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn} ${lambdaInsightsArn}`;
     const addTracePolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"`
     const setTraceModeToActiveCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --tracing-config Mode=Active`;
+    const addEnhancedMonitoringPolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy"`
     const addEnvVariablesCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --environment "${envVariables}"`;
 
     try {
       await addCollector(addOtelLayerCmd);
       await addTracingPolicy(addTracePolicyCmd);
       await activateTracing(setTraceModeToActiveCmd);
+      await addEnhancedMonitoringPolicy(addEnhancedMonitoringPolicyCmd);
       await addEnvironmentVariables(addEnvVariablesCmd);
     } catch (e) {
       console.log(e);
@@ -199,7 +210,3 @@ async function main() {
 }
 
 main();
-
-// firefly-test-3-role-ijyk708n
-
-// aws iam attach-role-policy --role-name firefly-test-3-role-ijyk708n --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"
