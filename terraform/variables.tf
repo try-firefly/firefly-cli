@@ -18,6 +18,6 @@ variable "namespace_list" {
   type = list(string)
   default = [
     "AWS/Lambda",
-    "AWS/LambdaInsights"
+    "LambdaInsights"
   ]
 }
