@@ -2,6 +2,7 @@ const { promisify } = require('util');
 const exec = promisify(require('child_process').exec);
 const inquirer = require('inquirer');
 const { createYamlZip } = require('../src/helpers/yaml-generator');
+const { createFireflyLayer } = require('../src/helpers/layer-generator');
 
 const suppportRegions = [
   "ap-northeast-1",
@@ -204,6 +205,7 @@ async function instrumentFunctions(functionsToInstrument) {
 async function main() {
   const httpsAddress = await getHttpsAddress();
   await createYamlZip(httpsAddress);
+  await createFireflyLayer();
   const functionList = await getFunctionList();
   const functionsToInstrument = await getFunctionsToInstrument(functionList);
   await instrumentFunctions(functionsToInstrument);

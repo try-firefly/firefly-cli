@@ -39,3 +39,17 @@ Terraform is configured to setup a metric-stream and firehose one region at a ti
 
 - You have used different endpoints for functions residing in different regions:<br>
   **Run `terraform apply` for each region using the relevant HTTPS address for that region**
+
+## Dev notes
+
+- This Git repo uses [Git submodules](https://gist.github.com/gitaarik/8735255) to link to the Firefly Lambda Layer's repo. To update the submodule link (when the Firefly Lambda Layer updates), use the following:
+
+```
+git submodule update
+```
+
+To pull from remote with submodules' current commits, use:
+
+```
+git pull --recurse-submodules
+```
