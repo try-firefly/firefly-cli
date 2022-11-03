@@ -8,7 +8,7 @@
 
 ## Instrumentation
 
-1. `git clone` this repo
+1. `git clone` this repo with `--recurse-submodules` flag
 2. Run `npm install` in the root directory
 3. `cd` into the `bin` directory and run `node cli.js`
 
