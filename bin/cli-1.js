@@ -1,5 +1,4 @@
 const AWS = require("aws-sdk");
-const uuid = require('uuid');
 const inquirer = require('inquirer');
 const { createYamlZip } = require('../src/helpers/yaml-generator');
 const AdmZip = require("adm-zip");
@@ -163,8 +162,17 @@ async function instrumentFunctions(functionsToInstrument) {
       continue;
     }
 
-    
-  
+    const configPath = "/opt/collector.yaml";
+    const otelArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`;
+    const lambdaInsightsArn = arnLambdaInsights[fObj.region];
+    //`arn:aws:lambda:${fObj.region}:580247275435:layer:LambdaInsightsExtension:21`
+    const envVariables = `Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=${configPath}}`;
+    const addOtelLayerCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn} ${lambdaInsightsArn}`;
+    const addTracePolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"`
+    const setTraceModeToActiveCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --tracing-config Mode=Active`;
+    const addEnhancedMonitoringPolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy"`
+    const addEnvVariablesCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --environment "${envVariables}"`;
+
   }
 }
 
@@ -196,7 +204,4 @@ What are we trying to do?
 - based on arc return correct string with arc
 - check region based on arc and see if supported
 
-
 */
-
-

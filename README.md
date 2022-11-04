@@ -38,3 +38,11 @@ Terraform is configured to setup a metric-stream and firehose one region at a ti
 
 * You have used different endpoints for functions residing in different regions:<br>
 **Run `terraform apply` for each region using the relevant HTTPS address for that region**
+
+-------------------------------------------------------------------------------------------------
+
+New readme
+
+- make sure you have credentials loaded
+- https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-shared.html
+
