@@ -2,7 +2,7 @@ const AWS = require("aws-sdk");
 const uuid = require('uuid');
 const inquirer = require('inquirer');
 const { createYamlZip } = require('../src/helpers/yaml-generator');
-const lambda = new AWS.Lambda({region: 'eu-central-1'});
+let lambda;
 
 async function getList() {
   const data = await lambda.listFunctions().promise();
@@ -33,7 +33,21 @@ function extractFunctionData(functions) {
   return functionData;
 }
 
+async function setRegion() {
+  const question = {
+    type: 'input',
+    name: 'region',
+    prefix: '',
+    message: 'Please provide your AWS region:',
+  }
+
+  const answer = await inquirer.prompt(question);
+  const region = answer.region;
+  lambda = new AWS.Lambda({region});
+}
+
 async function main() {
+  await setRegion();
   const functionList = await getList();
   console.log(functionList);
 }
