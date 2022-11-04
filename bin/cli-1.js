@@ -38,6 +38,25 @@ const supportedRegions = {
   ]
 }
 
+const arnLambdaInsights = {
+  "ap-northeast-1": "arn:aws:lambda:ap-northeast-1:580247275435:layer:LambdaInsightsExtension:32",
+  "ap-northeast-2": "arn:aws:lambda:ap-northeast-2:580247275435:layer:LambdaInsightsExtension:20",
+  "ap-south-1": "arn:aws:lambda:ap-south-1:580247275435:layer:LambdaInsightsExtension:21",
+  "ap-southeast-1": "arn:aws:lambda:ap-southeast-1:580247275435:layer:LambdaInsightsExtension:21",
+  "ap-southeast-2": "arn:aws:lambda:ap-southeast-2:580247275435:layer:LambdaInsightsExtension:21",
+  "ca-central-1": "arn:aws:lambda:ca-central-1:580247275435:layer:LambdaInsightsExtension:20",
+  "eu-central-1": "arn:aws:lambda:eu-central-1:580247275435:layer:LambdaInsightsExtension:21",
+  "eu-north-1": "arn:aws:lambda:eu-north-1:580247275435:layer:LambdaInsightsExtension:20",
+  "eu-west-1": "arn:aws:lambda:eu-west-1:580247275435:layer:LambdaInsightsExtension:21",
+  "eu-west-2": "arn:aws:lambda:eu-west-2:580247275435:layer:LambdaInsightsExtension:21",
+  "eu-west-3": "arn:aws:lambda:eu-west-3:580247275435:layer:LambdaInsightsExtension:20",
+  "sa-east-1": "arn:aws:lambda:sa-east-1:580247275435:layer:LambdaInsightsExtension:20",
+  "us-east-1": "arn:aws:lambda:us-east-1:580247275435:layer:LambdaInsightsExtension:21",
+  "us-east-2": "arn:aws:lambda:us-east-2:580247275435:layer:LambdaInsightsExtension:21",
+  "us-west-1": "arn:aws:lambda:us-west-1:580247275435:layer:LambdaInsightsExtension:20",
+  "us-west-2": "arn:aws:lambda:us-west-2:580247275435:layer:LambdaInsightsExtension:21",
+}
+
 async function getList() {
   const data = await lambda.listFunctions().promise();
   return extractFunctionData(data.Functions);
@@ -69,6 +88,7 @@ function extractFunctionData(functions) {
     fObj.region = getRegion(f.FunctionArn);
     fObj.runtime = f.Runtime;
     fObj.role = getRole(f.Role);
+    fObj.roleArn = f.Role;
     fObj.architecture = f.Architectures[0];
     functionData.push(fObj);
   }
@@ -162,46 +182,45 @@ async function instrumentFunctions(functionsToInstrument) {
       continue;
     }
 
-    const configPath = "/opt/collector.yaml";
-    const otelArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`;
-    const lambdaInsightsArn = arnLambdaInsights[fObj.region];
-    //`arn:aws:lambda:${fObj.region}:580247275435:layer:LambdaInsightsExtension:21`
-    const envVariables = `Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=${configPath}}`;
-    const addOtelLayerCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn} ${lambdaInsightsArn}`;
-    const addTracePolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"`
-    const setTraceModeToActiveCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --tracing-config Mode=Active`;
-    const addEnhancedMonitoringPolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy"`
-    const addEnvVariablesCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --environment "${envVariables}"`;
+    const params = {
+      FunctionName: fObj.name,
+      Environment: {
+        Variables: {
+          'AWS_LAMBDA_EXEC_WRAPPER': '/opt/otel-handler',
+          'OPENTELEMETRY_COLLECTOR_CONFIG_FILE': '/opt/collector.yaml',
+          'OTEL_PROPAGATORS': 'tracecontext',
+          'OTEL_TRACES_SAMPLER': 'always_on'
+        }
+      },
+      // Handler: '/opt/nodejs/firefly-handler.handler',
+      Layers: [ // add firefly layer and tracing config mode set to pass through
+        otelConfigLayerArn,
+        `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`, // otel layer
+        arnLambdaInsights[fObj.region] // lambda insights layer
+      ],
+      Role: fObj.roleArn,
+      TracingConfig: {
+        Mode: 'Active'
+      }
+    };
+
+    const result = await lambda.updateFunctionConfiguration(params).promise();
+    console.log(result);
+
+    // const addTracePolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"` go in and save lambda to add policy automatically
+    // const addEnhancedMonitoringPolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy"` // not done
 
   }
 }
 
 async function main() {
   await setRegion();
-  // const httpsAddress = await getHttpsAddress();
-  // await createYamlZip(httpsAddress);
-  // await publishLayer();
-
+  const httpsAddress = await getHttpsAddress();
+  await createYamlZip(httpsAddress);
+  await publishLayer();
   const functionList = await getList();
-  console.log(functionList);
-  // const functionsToInstrument = await getFunctionsToInstrument(functionList);
+  const functionsToInstrument = await getFunctionsToInstrument(functionList);
+  await instrumentFunctions(functionsToInstrument);
 }
 
 main();
-
-/*
-
-- Get the https address and create yaml file
-
-- Get all lambda functions
-- Extract data from list
-  - look at data and adapt existing functions
-- 
-
-
-What are we trying to do?
-- check what arc is
-- based on arc return correct string with arc
-- check region based on arc and see if supported
-
-*/
