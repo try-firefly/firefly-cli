@@ -53,3 +53,5 @@ To pull from remote with submodules' current commits, use:
 ```
 git pull --recurse-submodules
 ```
+
+[See this for more information about updating submodules](https://stackoverflow.com/questions/5828324/update-git-submodule-to-latest-commit-on-origin/5828396#5828396)
