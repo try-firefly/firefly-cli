@@ -135,10 +135,10 @@ async function waitForAws(sec) {
   return new Promise(resolve => setTimeout(resolve, sec * 1000));
 }
 
-async function addCollector(addOtelLayerCmd) {
-  logger('Adding OpenTelemetry collector');
-  await exec(addOtelLayerCmd);
-  completionLogger('Collector added');
+async function addLayers(addLayersCmd) {
+  logger('Adding OpenTelemetry collector, Lambda Insights and Firefly layers');
+  await exec(addLayersCmd);
+  completionLogger('Layers added');
   await waitForAws(2);
 }
 
@@ -149,10 +149,17 @@ async function addTracingPolicy(addTracePolicyCmd) {
   await waitForAws(2);
 }
 
-async function activateTracing(setTraceModeToActiveCmd) {
-  logger('Activating trace mode');
-  await exec(setTraceModeToActiveCmd);
-  completionLogger('Trace mode activated');
+async function deactivateTracing(setTracingCmd) {
+  logger('Deactivating active tracing');
+  await exec(setTracingCmd);
+  completionLogger('Active tracing deactivated');
+  await waitForAws(2);
+}
+
+async function changeLambdaHandler(changeHandlerCmd) {
+  logger('Changing default Lambda handler to Firefly handler');
+  await exec(changeHandlerCmd);
+  completionLogger('Lambda handler changed');
   await waitForAws(2);
 }
 
@@ -191,18 +198,20 @@ async function instrumentFunctions(functionsToInstrument) {
     const configPath = fObj.runtime.match(/.*node.*/gi) ? "/opt/collector.yaml" : "/opt/otel-instrument";
     const otelArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`;
     const lambdaInsightsArn = "arn:aws:lambda:eu-central-1:580247275435:layer:LambdaInsightsExtension:21";
-    const envVariables = `Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=${configPath}}`;
-    const addLayersCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn} ${fireflyArn}`; //${lambdaInsightsArn}`;
+    const envVariables = `Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=${configPath},OTEL_PROPAGATORS=tracecontext,OTEL_TRACES_SAMPLER=always_on}`;
+    const addLayersCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn} ${fireflyArn} ${lambdaInsightsArn}`;
     const addTracePolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"`
-    const setTraceModeToActiveCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --tracing-config Mode=Active`;
+    const setTracingCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --tracing-config Mode=PassThrough`;
+    const changeHandlerCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --handler=/opt/nodejs/firefly-handler.handler`;
     const addEnhancedMonitoringPolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy"`
     const addEnvVariablesCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --environment "${envVariables}"`;
 
     try {
-      await addCollector(addLayersCmd);
-      await addTracingPolicy(addTracePolicyCmd);
-      await activateTracing(setTraceModeToActiveCmd);
-      await addEnhancedMonitoringPolicy(addEnhancedMonitoringPolicyCmd);
+      await addLayers(addLayersCmd);
+      // await addTracingPolicy(addTracePolicyCmd);
+      await changeLambdaHandler(changeHandlerCmd);
+      await deactivateTracing(setTracingCmd);
+      // await addEnhancedMonitoringPolicy(addEnhancedMonitoringPolicyCmd);
       await addEnvironmentVariables(addEnvVariablesCmd);
     } catch (e) {
       console.log(e);
