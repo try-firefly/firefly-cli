@@ -2,6 +2,7 @@ const AWS = require("aws-sdk");
 const inquirer = require('inquirer');
 const { createYamlZip } = require('../src/helpers/yaml-generator');
 const AdmZip = require("adm-zip");
+const iam = new AWS.IAM();
 let lambda;
 let otelConfigLayerArn;
 
@@ -204,12 +205,13 @@ async function instrumentFunctions(functionsToInstrument) {
       }
     };
 
-    const result = await lambda.updateFunctionConfiguration(params).promise();
-    console.log(result);
-
-    // const addTracePolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"` go in and save lambda to add policy automatically
-    // const addEnhancedMonitoringPolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy"` // not done
-
+    const iamParams = {
+      PolicyArn: "arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy", 
+      RoleName: fObj.role
+    };
+  
+    await iam.attachRolePolicy(iamParams).promise();
+    await lambda.updateFunctionConfiguration(params).promise();
   }
 }
 
