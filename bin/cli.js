@@ -23,11 +23,30 @@ const suppportRegions = [
   "us-west-2",
 ];
 
+const arnLambdaInsights = {
+  "ap-northeast-1": "arn:aws:lambda:ap-northeast-1:580247275435:layer:LambdaInsightsExtension:32",
+  "ap-northeast-2": "arn:aws:lambda:ap-northeast-2:580247275435:layer:LambdaInsightsExtension:20",
+  "ap-south-1": "arn:aws:lambda:ap-south-1:580247275435:layer:LambdaInsightsExtension:21",
+  "ap-southeast-1": "arn:aws:lambda:ap-southeast-1:580247275435:layer:LambdaInsightsExtension:21",
+  "ap-southeast-2": "arn:aws:lambda:ap-southeast-2:580247275435:layer:LambdaInsightsExtension:21",
+  "ca-central-1": "arn:aws:lambda:ca-central-1:580247275435:layer:LambdaInsightsExtension:20",
+  "eu-central-1": "arn:aws:lambda:eu-central-1:580247275435:layer:LambdaInsightsExtension:21",
+  "eu-north-1": "arn:aws:lambda:eu-north-1:580247275435:layer:LambdaInsightsExtension:20",
+  "eu-west-1": "arn:aws:lambda:eu-west-1:580247275435:layer:LambdaInsightsExtension:21",
+  "eu-west-2": "arn:aws:lambda:eu-west-2:580247275435:layer:LambdaInsightsExtension:21",
+  "eu-west-3": "arn:aws:lambda:eu-west-3:580247275435:layer:LambdaInsightsExtension:20",
+  "sa-east-1": "arn:aws:lambda:sa-east-1:580247275435:layer:LambdaInsightsExtension:20",
+  "us-east-1": "arn:aws:lambda:us-east-1:580247275435:layer:LambdaInsightsExtension:21",
+  "us-east-2": "arn:aws:lambda:us-east-2:580247275435:layer:LambdaInsightsExtension:21",
+  "us-west-1": "arn:aws:lambda:us-west-1:580247275435:layer:LambdaInsightsExtension:20",
+  "us-west-2": "arn:aws:lambda:us-west-2:580247275435:layer:LambdaInsightsExtension:21",
+}
+
 async function getFunctionList() {
   let list;
 
   try {
-    logger('Retrieving lambda functions');
+    logger('Retrieving your lambda functions');
     list = await exec("aws lambda list-functions");
   } catch (e) {
     console.log('Please make sure you have installed the AWS CLI');
@@ -197,9 +216,10 @@ async function instrumentFunctions(functionsToInstrument) {
 
     const configPath = fObj.runtime.match(/.*node.*/gi) ? "/opt/collector.yaml" : "/opt/otel-instrument";
     const otelArn = `arn:aws:lambda:${fObj.region}:901920570463:layer:${otel}`;
-    const lambdaInsightsArn = "arn:aws:lambda:eu-central-1:580247275435:layer:LambdaInsightsExtension:21";
     const envVariables = `Variables={AWS_LAMBDA_EXEC_WRAPPER=/opt/otel-handler,OPENTELEMETRY_COLLECTOR_CONFIG_FILE=${configPath},OTEL_PROPAGATORS=tracecontext,OTEL_TRACES_SAMPLER=always_on}`;
     const addLayersCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --layers ${otelArn} ${otelConfigArn} ${fireflyArn} ${lambdaInsightsArn}`;
+    const lambdaInsightsArn = arnLambdaInsights[fObj.region];
+    //`arn:aws:lambda:${fObj.region}:580247275435:layer:LambdaInsightsExtension:21`
     const addTracePolicyCmd = `aws iam attach-role-policy --role-name ${fObj.role} --policy-arn "arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess"`
     const setTracingCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --tracing-config Mode=PassThrough`;
     const changeHandlerCmd = `aws lambda update-function-configuration --function-name ${fObj.name} --handler=/opt/nodejs/firefly-handler.handler`;
