@@ -277,7 +277,6 @@ async function setupMetricStreamAndFirehose(httpsAddress, s3BackupDays) {
   -var 'aws_region=${region}' \
   -var 'ingest_endpoint=${httpsAddress}' \
   -var 'expiration_days=${s3BackupDays}'`;
-  console.log(applyCmd);
   logger('Building metric stream and firehose');
   try {
     const applyProcess = baseExec(applyCmd);
