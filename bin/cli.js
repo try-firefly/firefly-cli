@@ -1,10 +1,14 @@
 const AWS = require("aws-sdk");
 const inquirer = require('inquirer');
+const { promisify } = require('util');
+const baseExec = require('child_process').exec;
+const exec = promisify(baseExec);
 const { createYamlZip } = require('../src/helpers/yaml-generator');
 const { createFireflyLayer } = require('../src/helpers/layer-generator');
 const AdmZip = require("adm-zip");
 const iam = new AWS.IAM();
 let lambda;
+let region;
 let otelConfigLayerArn;
 let fireflyLayerArn;
 
@@ -140,7 +144,7 @@ async function setRegion() {
   }
 
   const answer = await inquirer.prompt(question);
-  const region = answer.region;
+  region = answer.region;
   lambda = new AWS.Lambda({region});
 }
 
@@ -245,16 +249,56 @@ async function instrumentFunctions(functionsToInstrument) {
   completionLogger('Instrumentation complete');
 }
 
+async function getS3BackupDays() {
+  const question = {
+    type: 'input',
+    name: 's3BackupDays',
+    prefix: '',
+    message: 'How many days would you like to keep failed metric requests in your backup s3 bucket (e.g. 90):',
+  }
+
+  const answer = await inquirer.prompt(question);
+  return answer.s3BackupDays;
+}
+
+async function initialiseTerraform() {
+  logger('Initialising terraform');
+  try {
+    const initOutput = await exec("cd ../terraform && terraform init");
+    console.log(initOutput.stdout);
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+async function setupMetricStreamAndFirehose(httpsAddress, s3BackupDays) {
+  await initialiseTerraform();
+  const applyCmd = `cd ../terraform && terraform apply -auto-approve \
+  -var 'aws_region=${region}' \
+  -var 'ingest_endpoint=${httpsAddress}' \
+  -var 'expiration_days=${s3BackupDays}'`;
+  console.log(applyCmd);
+  logger('Building metric stream and firehose');
+  try {
+    const applyProcess = baseExec(applyCmd);
+    applyProcess.stdout.pipe(process.stdout);
+  } catch (e) {
+    console.log(e);
+  }
+}
+
 async function main() {
   await setRegion();
   const httpsAddress = await getHttpsAddress();
   await createYamlZip(httpsAddress);
   await createFireflyLayer();
   const functionList = await getList();
+  const s3BackupDays = await getS3BackupDays();
   const functionsToInstrument = await getFunctionsToInstrument(functionList);
   await publishOtelConfigLayer();
   await publishFireflyLayer();
   await instrumentFunctions(functionsToInstrument);
+  await setupMetricStreamAndFirehose(httpsAddress, s3BackupDays);
 }
 
 main();
