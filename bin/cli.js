@@ -2,12 +2,14 @@ const AWS = require("aws-sdk");
 const inquirer = require('inquirer');
 const { createYamlZip } = require('../src/helpers/yaml-generator');
 const { createFireflyLayer } = require('../src/helpers/layer-generator');
+const { fireFlyArt } = require('../src/ascii/fireflyLogo');
+var term = require( 'terminal-kit' ).terminal ;
 const AdmZip = require("adm-zip");
 const iam = new AWS.IAM();
 let lambda;
 let otelConfigLayerArn;
 let fireflyLayerArn;
-
+  
 const supportedRegions = {
   'x86_64': [
     "ap-northeast-1",
@@ -246,6 +248,8 @@ async function instrumentFunctions(functionsToInstrument) {
 }
 
 async function main() {
+  term.bold.brightBlue('                              Firefly');
+  fireFlyArt();
   await setRegion();
   const httpsAddress = await getHttpsAddress();
   await createYamlZip(httpsAddress);
