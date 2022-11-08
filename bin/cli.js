@@ -84,7 +84,8 @@ async function getList() {
 }
 
 function getRole(arn) {
-  return arn.split('/')[2];
+  let splitArn = arn.split('/');
+  return splitArn[splitArn.length - 1];
 }
 
 function getRegion(arn) {
