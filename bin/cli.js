@@ -5,13 +5,14 @@ const baseExec = require('child_process').exec;
 const exec = promisify(baseExec);
 const { createYamlZip } = require('../src/helpers/yaml-generator');
 const { createFireflyLayer } = require('../src/helpers/layer-generator');
+const { fireFlyArt } = require('../src/ascii/fireflyLogo');
 const AdmZip = require("adm-zip");
 const iam = new AWS.IAM();
 let lambda;
 let region;
 let otelConfigLayerArn;
 let fireflyLayerArn;
-
+  
 const supportedRegions = {
   'x86_64': [
     "ap-northeast-1",
@@ -288,6 +289,7 @@ async function setupMetricStreamAndFirehose(httpsAddress, s3BackupDays) {
 }
 
 async function main() {
+  fireFlyArt();
   await setRegion();
   const httpsAddress = await getHttpsAddress();
   await createYamlZip(httpsAddress);
