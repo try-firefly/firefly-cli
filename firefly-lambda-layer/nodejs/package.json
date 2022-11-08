@@ -1,0 +1,12 @@
+{
+  "name": "firefly-layer-nodejs",
+  "version": "1.0.0",
+  "description": "An AWS Lambda Layer for Node.js Lambdas monitored via Firefly",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
