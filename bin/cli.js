@@ -264,8 +264,8 @@ async function getS3BackupDays() {
 async function initialiseTerraform() {
   logger('Initialising terraform');
   try {
-    const initOutput = await exec("cd ../terraform && terraform init");
-    console.log(initOutput.stdout);
+    await exec("cd ../terraform && terraform init");
+    completionLogger('Terraform initialised');
   } catch (e) {
     console.log(e);
   }
