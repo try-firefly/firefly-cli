@@ -1,3 +1,0 @@
-[submodule "firefly-lambda-layer"]
-	path = firefly-lambda-layer
-	url = git@github.com:try-firefly/firefly-lambda-layer.git
