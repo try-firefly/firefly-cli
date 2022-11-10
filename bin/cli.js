@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 const inquirer = require('inquirer');
+const ora = require('ora');
 const { promisify } = require('util');
 const baseExec = require('child_process').exec;
 const exec = promisify(baseExec);
@@ -12,7 +13,7 @@ let lambda;
 let region;
 let otelConfigLayerArn;
 let fireflyLayerArn;
-  
+
 const supportedRegions = {
   'x86_64': [
     "ap-northeast-1",
@@ -93,14 +94,6 @@ function getRegion(arn) {
   return arn.split(':')[3];
 }
 
-function logger(str) {
-  console.log('> ', str);
-}
-
-function completionLogger(str) {
-  console.log('\u2714 ', str);
-}
-
 function extractFunctionData(functions) {
   const functionData = [];
 
@@ -125,7 +118,7 @@ async function getHttpsAddress() {
     name: 'httpsAddress',
     prefix: '',
     message: 'Please provide an HTTPS address to send Telemetry data to (https://example.com):',
-    validate: httpsAddressValid
+    validate: httpsAddressValid,
   }
 
   const answer = await inquirer.prompt(question);
@@ -157,12 +150,24 @@ async function getFunctionsToInstrument(functionList) {
     type: 'checkbox',
     name: 'functions',
     prefix: '',
-    message: 'Select the functions you would like to instrument',
-    choices: functionNames
+    message: 'Please select the functions you would like to instrument:',
+    choices: functionNames,
   }
 
   const answers = await inquirer.prompt(question);
   return functionList.filter(f => answers.functions.includes(f.name));
+}
+
+async function getS3BackupDays() {
+  const question = {
+    type: 'input',
+    name: 's3BackupDays',
+    prefix: '',
+    message: 'Please specify the number of days you would like to keep failed metric requests in your backup s3 bucket (e.g. 90):',
+  }
+
+  const answer = await inquirer.prompt(question);
+  return answer.s3BackupDays;
 }
 
 async function publishLayer(layerName, layerZipLocation) {
@@ -180,15 +185,15 @@ async function publishLayer(layerName, layerZipLocation) {
 }
 
 async function publishOtelConfigLayer() {
-  logger('Publishing OpenTelemetry config layer');
+  const process = ora('Deploying OpenTelemetry configuration layer').start();
   otelConfigLayerArn = await publishLayer('otel-collector-config', './collector.zip');
-  completionLogger('OpenTelemetry config layer published');
+  process.succeed('Deployed OpenTelemetry configuration layer');
 }
 
 async function publishFireflyLayer() {
-  logger('Publishing Firefly layer');
+  const process = ora('Deploying Firefly layer').start();
   fireflyLayerArn = await publishLayer('firefly-layer', './firefly-layer.zip');
-  completionLogger('Firefly layer published');
+  process.succeed('Deployed Firefly layer');
 }
 
 function getOtelCollector(runtime, architecture) {
@@ -203,16 +208,16 @@ function getOtelCollector(runtime, architecture) {
 
 async function instrumentFunctions(functionsToInstrument) {
   for (const fObj of functionsToInstrument) {
-    logger(`Instrumenting ${fObj.name}`);
+    const process = ora(`Instrumenting ${fObj.name}`).start();
     const otel = getOtelCollector(fObj.runtime, fObj.architecture);
 
     if (!otel) {
-      logger(`${fObj.name} can't be instrumented, ${fObj.runtime} runtime not supported`);
+      process.warn(`${fObj.name} cannot be instrumented, ${fObj.runtime} runtime not supported`);
       continue;
     }
   
     if (!supportedRegions[fObj.architecture].includes(fObj.region)) {
-      logger(`${fObj.name} can't be instrumented, ${fObj.region} not supported`);
+      process.warn(`${fObj.name} cannot be instrumented, ${fObj.region} not supported`);
       continue;
     }
 
@@ -246,29 +251,19 @@ async function instrumentFunctions(functionsToInstrument) {
   
     await iam.attachRolePolicy(iamParams).promise();
     await lambda.updateFunctionConfiguration(params).promise();
+    process.succeed(`${fObj.name} instrumented`);
   }
 
-  completionLogger('Instrumentation complete');
-}
-
-async function getS3BackupDays() {
-  const question = {
-    type: 'input',
-    name: 's3BackupDays',
-    prefix: '',
-    message: 'How many days would you like to keep failed metric requests in your backup s3 bucket (e.g. 90):',
-  }
-
-  const answer = await inquirer.prompt(question);
-  return answer.s3BackupDays;
+  ora('Instrumentation complete').start().succeed();
 }
 
 async function initialiseTerraform() {
-  logger('Initialising terraform');
+  const process = ora('Initialising terraform').start();
   try {
     await exec("cd ../terraform && terraform init");
-    completionLogger('Terraform initialised');
+    process.succeed('Terraform initialised');
   } catch (e) {
+    process.fail('Terraform unable to initialise');
     console.log(e);
   }
 }
@@ -279,10 +274,11 @@ async function setupMetricStreamAndFirehose(httpsAddress, s3BackupDays) {
   -var 'aws_region=${region}' \
   -var 'ingest_endpoint=${httpsAddress}' \
   -var 'expiration_days=${s3BackupDays}'`;
-  logger('Building metric stream and firehose');
+  const process = ora('Deploying metric stream and firehose').start();
   try {
     const applyProcess = baseExec(applyCmd);
     applyProcess.stdout.pipe(process.stdout);
+    process.succeed('Deployed metric stream and firehose');
   } catch (e) {
     console.log(e);
   }
