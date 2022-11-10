@@ -2,7 +2,7 @@
   "name": "firefly-cli",
   "version": "1.0.0",
   "description": "A command line tool for the Firefly observability framework",
-  "main": "/bin/cli.js",
+  "main": "bin/cli.js",
   "scripts": {
     "start": "./bin/cli.js"
   },
@@ -19,7 +19,7 @@
     "terminal-kit": "^3.0.0"
   },
   "bin": {
-    "firefly init": "cd bin && ./cli.js"
+    "firefly": "cd bin && ./cli.js"
   },
   "contributors": [
     {
