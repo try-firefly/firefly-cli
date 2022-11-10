@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const process = require('process');
-process.chdir('./bin');
+process.chdir(__dirname);
 const AWS = require('aws-sdk');
 const { createYamlZip } = require('../src/helpers/yaml-generator');
 const { createFireflyLayer } = require('../src/helpers/layer-generator');
