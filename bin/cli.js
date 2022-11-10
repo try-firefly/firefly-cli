@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
-const AWS = require("aws-sdk");
+const process = require('process');
+process.chdir('./bin');
+const AWS = require('aws-sdk');
 const inquirer = require('inquirer');
 const ora = require('ora');
 const { promisify } = require('util');
@@ -9,7 +11,7 @@ const exec = promisify(baseExec);
 const { createYamlZip } = require('../src/helpers/yaml-generator');
 const { createFireflyLayer } = require('../src/helpers/layer-generator');
 const { fireFlyArt } = require('../src/ascii/fireflyLogo');
-const AdmZip = require("adm-zip");
+const AdmZip = require('adm-zip');
 const iam = new AWS.IAM();
 let lambda;
 let region;
