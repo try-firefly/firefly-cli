@@ -14,8 +14,11 @@ const { getFunctionsToInstrument } = require('../src/utils/functions-to-instrume
 const { publishOtelConfigLayer, publishFireflyLayer } = require('../src/utils/publish-layer');
 const { instrumentFunctions } = require('../src/utils/instrument-functions');
 const { setupMetricStreamAndFirehose } = require('../src/utils/ms-and-fh');
+const { destroyMetricStreamAndFirehose } = require('../src/utils/destroy');
+const { outputValidArguments } = require('../src/utils/valid-arguments');
+const { writeVariablesToFile } = require('../src/utils/write-to-file');
 
-async function main() {
+async function setup() {
   fireFlyArt();
   const region = await setRegion();
   const lambda = new AWS.Lambda({region});
@@ -24,11 +27,26 @@ async function main() {
   await createFireflyLayer();
   const functionList = await getList(lambda);
   const s3BackupDays = await getS3BackupDays();
+  writeVariablesToFile(region, s3BackupDays, httpsAddress);
   const functionsToInstrument = await getFunctionsToInstrument(functionList);
   const otelConfigLayerArn = await publishOtelConfigLayer(lambda);
   const fireflyLayerArn = await publishFireflyLayer(lambda);
   await instrumentFunctions(functionsToInstrument, lambda, otelConfigLayerArn, fireflyLayerArn);
   await setupMetricStreamAndFirehose(httpsAddress, s3BackupDays, region);
+}
+
+function main() {
+  const arg = process.argv[2];
+  if (arg === undefined) {
+    outputValidArguments();
+  } else if (arg === 'init') {
+    setup();
+  } else if (arg === 'destroy') {
+    destroyMetricStreamAndFirehose();
+  } else {
+    console.log('Invalid argument.');
+    outputValidArguments();
+  }
 }
 
 main();
