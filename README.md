@@ -26,7 +26,7 @@ Install the firefly cli using `npm`. Run `npm install -g try-firefly`
 1. Run `firefly` to see command usage:
 
 <p align="center">
-  <img src="docs/assets/usage.gif">
+  <img src="docs/assets/usage.gif?raw=true">
 </p>
 
 The `cli` instruments functions based on region. If you have functions residing in different regions, simply run the CLI again to setup the necessary infrastructure in that region.
