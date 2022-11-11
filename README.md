@@ -30,5 +30,8 @@ Install the firefly cli using `npm`. Run `npm install -g try-firefly`
 
 2. Run `firefly init` to instrument your Lambda functions and setup a metric stream and firehose
 
+3. Run `firefly destroy` to teardown the metric stream and firehose
+
+<p align="center"><img src="docs/assets/destroy.gif"></p>
 
 The `cli` instruments functions based on region. If you have functions residing in different regions, simply run the CLI again to setup the necessary infrastructure in that region.
