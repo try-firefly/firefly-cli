@@ -1,13 +1,13 @@
 {
-  "name": "firefly-cli",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "try-firefly",
+  "version": "1.0.2",
+  "description": "A command line tool for the Firefly observability framework",
+  "main": "bin/cli.js",
   "scripts": {
-    "start": "node main.js"
+    "start": "./bin/cli.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Firefly",
   "license": "ISC",
   "dependencies": {
     "adm-zip": "^0.5.9",
@@ -15,7 +15,28 @@
     "gradient-string": "^2.0.2",
     "inquirer": "^8.0.0",
     "js-yaml": "^4.1.0",
-    "terminal-kit": "^3.0.0",
-    "uuid": "^9.0.0"
-  }
+    "ora": "^5.4.1",
+    "terminal-kit": "^3.0.0"
+  },
+  "bin": {
+    "firefly": "./bin/cli.js"
+  },
+  "contributors": [
+    {
+      "name": "Marcus Sinkinson",
+      "github": "<https://github.com/Sinkinson>"
+    },
+    {
+      "name": "Carolina Avila",
+      "github": "<https://github.com/CarolinaDAvila>"
+    },
+    {
+      "name": "Julia Park",
+      "github": "<https://github.com/Julia-Park>"
+    },
+    {
+      "name": "Will Yennie",
+      "github": "<https://github.com/wyennie>"
+    }
+  ]
 }
