@@ -13,6 +13,7 @@ Your AWS accout needs to have IAM permissions to create the following resources:
 * aws_iam_role
 * aws_iam_role_policy
 * aws_kinesis_firehose_delivery_stream
+* aws_lambda
 * aws_s3_bucket
 * aws_s3_bucket_public_access_block
 
@@ -29,6 +30,8 @@ Install the firefly cli using `npm`. Run `npm install -g try-firefly`
 <p align="center"><img src="docs/assets/usage.gif"></p>
 
 2. Run `firefly init` to instrument your Lambda functions and setup a metric stream and firehose
+
+<p align="center"><img src="docs/assets/init.gif"></p>
 
 3. Run `firefly destroy` to teardown the metric stream and firehose
 
