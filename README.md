@@ -20,13 +20,15 @@ Your AWS accout needs to have IAM permissions to create the following resources:
 
 Install the firefly cli using `npm`. Run `npm install -g try-firefly`
 
+<p align="center"><img src="docs/assets/install.gif"></p>
 
 ## Getting started
 
-1. Run `firefly` to see command usage:
+1. Run `firefly` to see available commands
 
-<p align="center">
-  <img src="docs/assets/usage.gif?raw=true">
-</p>
+<p align="center"><img src="docs/assets/usage.gif"></p>
+
+2. Run `firefly init` to instrument your Lambda functions and setup a metric stream and firehose
+
 
 The `cli` instruments functions based on region. If you have functions residing in different regions, simply run the CLI again to setup the necessary infrastructure in that region.
