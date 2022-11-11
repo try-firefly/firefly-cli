@@ -1,8 +1,5 @@
-// Users must change their Runtime Handler to /opt/nodejs/firefly-handler.handler (this file)
 const opentelemetry = require('@opentelemetry/api');
-const userFunction = require('/var/task/index.js'); // TODO: allow users to change this and the handling function
-
-console.log('WORKING DIR', process.cwd()); // Debugging
+const userFunction = require('/var/task/index.js');
 
 function extractContextFromTraceparent(traceparent) {
   const [_, traceId, spanId] = traceparent.split('-');
@@ -31,7 +28,6 @@ function tryParseTraceparent(callback) {
 }
 
 function getMsgAttributesTraceparent(event) {
-  // TODO: Check for/handle multi-record events
   return tryParseTraceparent(() => event.Records[0].messageAttributes.traceparent.stringValue);
 }
 
@@ -39,7 +35,6 @@ function getfireflyHeadersTraceparent(event) {
   return tryParseTraceparent(() => event.fireflyHeaders.traceparent);
 }
 
-// Extract parent context from fireflyHeaders or messageAttributes
 function fireflyTraceparentExtractor(event) {
   const messageAttrbiutesTraceparent = getMsgAttributesTraceparent(event);
 
@@ -50,10 +45,6 @@ function fireflyTraceparentExtractor(event) {
   if (fireflyHeadersTraceparent) return fireflyHeadersTraceparent;
 }
 
-
-// For handling incoming SQS/SNS events:
-// If event has a messageAttributes.traceparent (true for SQS/SNS), get the stringValue and use it as replacement to span;
-// otherwise, assume instrumentation has already parsed out context via default context extractor (looks in HTTP headers) and continue
 exports.handler = async (event, context, callback) => {
   const traceparent = fireflyTraceparentExtractor(event);
 
