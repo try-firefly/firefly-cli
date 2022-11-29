@@ -1,6 +1,6 @@
 {
   "name": "try-firefly",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A command line tool for the Firefly observability framework",
   "main": "bin/cli.js",
   "scripts": {
