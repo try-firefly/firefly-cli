@@ -9,19 +9,27 @@
 
 Your AWS accout needs to have IAM permissions to create the following resources:
 
-* aws_cloudwatch_metric_stream
-* aws_iam_role
-* aws_iam_role_policy
-* aws_kinesis_firehose_delivery_stream
-* aws_lambda
-* aws_s3_bucket
-* aws_s3_bucket_public_access_block
+- aws_cloudwatch_metric_stream
+- aws_iam_role
+- aws_iam_role_policy
+- aws_kinesis_firehose_delivery_stream
+- aws_lambda
+- aws_s3_bucket
+- aws_s3_bucket_public_access_block
 
 ## Install
 
 Install the firefly cli using `npm`. Run `npm install -g try-firefly`
 
 <p align="center"><img src="docs/assets/install.gif"></p>
+
+If using Ubuntu, also run the following command replacing `username` with your username:
+
+```
+sudo chown -R username:username /usr/local/lib/node_modules/try-firefly/
+```
+
+- This will make the user the owner of the global Firefly installation
 
 ## Getting started
 
