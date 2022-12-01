@@ -1,14 +1,14 @@
 const loadUserHandler = async (path) => {
-  let index;
+  let userHandler;
   try {
     console.log('FIREFLY: Loading user handler')
-    index = await import('/var/task/index.mjs');
+    userHandler = require('/var/task/index.js');
   } catch (e) {
-    console.log('FIREFLY: User handler not found at /var/task/index.mjs, trying /var/task/index.js');
-    index = require('/var/task/index.js');
+    console.log('FIREFLY: User handler not found at /var/task/index.js, trying /var/task/index.mjs');
+    userHandler = import('/var/task/index.mjs');
   }
 
-  return index.handler;
+  return userHandler;
 }
 
 exports.loadUserHandler = loadUserHandler;
