@@ -24,7 +24,7 @@ Your AWS accout needs to have IAM permissions to create the following resources:
 
 Install the firefly cli using `npm`. Run `npm install -g try-firefly`
 
-<p align="center"><img src="docs/assets/install.gif"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/try-firefly/firefly-cli/main/docs/assets/install.gif"></p>
 
 If using Ubuntu, also run the following command replacing `username` with your username:
 
@@ -38,15 +38,15 @@ sudo chown -R username:username /usr/local/lib/node_modules/try-firefly/
 
 1. Run `firefly` to see available commands
 
-<p align="center"><img src="docs/assets/usage.gif"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/try-firefly/firefly-cli/main/docs/assets/usage.gif"></p>
 
 2. Run `firefly init` to instrument your Lambda functions and setup a metric stream and firehose
 
-<p align="center"><img src="docs/assets/init.gif"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/try-firefly/firefly-cli/main/docs/assets/init.gif"></p>
 
 3. Run `firefly destroy` to teardown the metric stream and firehose
 
-<p align="center"><img src="docs/assets/destroy.gif"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/try-firefly/firefly-cli/main/docs/assets/destroy.gif"></p>
 
 The `cli` instruments functions based on region. If you have functions residing in different regions, simply run the CLI again to setup the necessary infrastructure in that region.
 
@@ -58,3 +58,5 @@ The instrumentation of a Lambda will add the following Lambda Layers to Lambda:
 - [Firefly Layer](firefly-lambda-layer/README.md)
 - Open Telemetry configuration layer
 - [AWS Lambda Insights layer](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Lambda-Insights.html)
+
+For more info, check out [Firefly's GitHub here](https://github.com/try-firefly)!
