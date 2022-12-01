@@ -2,6 +2,9 @@
 
 1. AWS account
 2. A Lambda function to monitor
+
+- Lambda function handler should be named `handler` and exported from a `index.js` or `index.mjs` file in the Lambda's default root diretory
+
 3. AWS credentials in a [shared file](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-shared.html)
 4. [Node.js](https://nodejs.org/en/download/)
 5. [Terraform](https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
@@ -46,3 +49,12 @@ sudo chown -R username:username /usr/local/lib/node_modules/try-firefly/
 <p align="center"><img src="docs/assets/destroy.gif"></p>
 
 The `cli` instruments functions based on region. If you have functions residing in different regions, simply run the CLI again to setup the necessary infrastructure in that region.
+
+## Instrumentation:
+
+The instrumentation of a Lambda will add the following Lambda Layers to Lambda:
+
+- [AWS managed Open Telemetry Layer for JavaScript](https://aws-otel.github.io/docs/getting-started/lambda/lambda-js)
+- [Firefly Layer](firefly-lambda-layer/README.md)
+- Open Telemetry configuration layer
+- [AWS Lambda Insights layer](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Lambda-Insights.html)
