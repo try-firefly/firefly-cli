@@ -1,61 +1,23 @@
 const opentelemetry = require('@opentelemetry/api');
-const userFunction = require('/var/task/index.js');
-
-function extractContextFromTraceparent(traceparent) {
-  const [_, traceId, spanId] = traceparent.split('-');
-  return { traceId, spanId };
-}
-
-function addSpanToTrace(span, parentCtx) {
-  let spanCtx = span.spanContext();
-  spanCtx.traceId = parentCtx.traceId;
-  span.parentSpanId = parentCtx.spanId;
-}
-
-function tryParseTraceparent(callback) {
-  let traceparent;
-  try {
-    traceparent = callback();
-  } catch (err) {
-    if (err instanceof TypeError) {
-      return undefined;
-    } else {
-      throw err;
-    }
-  }
-
-  return traceparent;
-}
-
-function getMsgAttributesTraceparent(event) {
-  return tryParseTraceparent(() => event.Records[0].messageAttributes.traceparent.stringValue);
-}
-
-function getfireflyHeadersTraceparent(event) {
-  return tryParseTraceparent(() => event.fireflyHeaders.traceparent);
-}
-
-function fireflyTraceparentExtractor(event) {
-  const messageAttrbiutesTraceparent = getMsgAttributesTraceparent(event);
-
-  if (messageAttrbiutesTraceparent) return messageAttrbiutesTraceparent;
-
-  const fireflyHeadersTraceparent = getfireflyHeadersTraceparent(event);
-
-  if (fireflyHeadersTraceparent) return fireflyHeadersTraceparent;
-}
+const { 
+  traceparentExtractor,
+  extractContext,reassignContext
+} = require('./src/utils/context-extractor');
+const { loadUserHandler } = require('./src/utils/handler-loader');
 
 exports.handler = async (event, context, callback) => {
-  const traceparent = fireflyTraceparentExtractor(event);
+  const traceparent = traceparentExtractor(event);
 
   if (traceparent) {
     console.log('FIREFLY: Reassigning span to correct trace');
-    const parentCtx = extractContextFromTraceparent(traceparent);
+    const parentCtx = extractContext(traceparent);
     const activeSpan = opentelemetry.trace.getActiveSpan();
 
-    addSpanToTrace(activeSpan, parentCtx);
+    reassignContext(activeSpan, parentCtx);
   }
 
+  const handler = await loadUserHandler();
+
   console.log('FIREFLY: Executing user handler');
-  return userFunction.handler(event, context, callback);
+  return handler(event, context, callback);
 }
